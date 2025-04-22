@@ -85,6 +85,33 @@ This scraper is designed with ethical considerations in mind:
 3. Only collects publicly available information
 4. Does not overload the server with requests
 
+## GitHub Actions Schedule
+
+The scraper is configured to run automatically using GitHub Actions with the following schedule:
+
+```
+0 20 * * *  # Runs at 8:00 PM UTC every day
+```
+
+This cron expression means:
+- **Minute (0)**: Run at the start of the hour
+- **Hour (20)**: Run at 20:00 UTC (8:00 PM UTC)
+- **Day of Month (*)**: Run every day of the month
+- **Month (*)**: Run every month
+- **Day of Week (*)**: Run every day of the week
+
+For a more detailed explanation of the schedule, see [SCHEDULE-EXPLANATION.md](SCHEDULE-EXPLANATION.md).
+
+## Robustness Requirements
+
+To ensure the scraper works reliably for the remainder of the semester:
+
+1. **Continuous Operation**: The scraper must run successfully for the entire remainder of the semester until the end of finals.
+2. **Daily Execution**: The scraper must run successfully every day, as evidenced by the GitHub Actions log.
+3. **Data Commitment**: The scraper must be able to commit the data to the repository.
+4. **Data Continuity**: The scraper must continuously update (not replace) the data contained in its JSON file.
+5. **Data Collection**: The scraper must collect entries over a lapse of time that includes at least 5 distinct data collection points over at least 2 weeks.
+
 ## Setup
 
 1. Clone this repository

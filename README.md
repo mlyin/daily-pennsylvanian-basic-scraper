@@ -1,137 +1,109 @@
-# Basic Git Scraper Template
+# Daily Pennsylvanian Headline Scraper
 
-This template provides a starting point for **git scraping**—the technique of scraping data from websites and automatically committing it to a Git repository using workflows, [coined by Simon Willison](https://simonwillison.net/2020/Oct/9/git-scraping/).
+This repository contains a scraper that collects headlines from different sections of The Daily Pennsylvanian website. The scraper runs once per day and stores the results in a JSON file that tracks headlines over time.
 
-Git scraping helps create an audit trail capturing snapshots of data over time. It leverages Git's version control and a continuous integration's scheduling capabilities to regularly scrape sites and save data without needing to manage servers.
+## Features
 
-The key benefit is automating web scrapers to run on a schedule with little overhead. The scraped data gets stored incrementally so you can review historical changes. This helps enable use-cases like price monitoring, content updates tracking, research datasets building, and more. The ability to have these resources for virtually free, enables the use of this technique for a wide range of projects.
+The scraper collects headlines from multiple sections of the Daily Pennsylvanian website:
+- Main headline (frontpage-link)
+- News section headlines
+- Sports section headlines
+- Opinion section headlines
+- Most read articles
 
-Tools like GitHub Actions, GitLab CI and others make git scraping adaptable to diverse sites and data needs. The scraping logic just needs to output data serialized formats like CSV, JSON etc which gets committed back to git. This makes the data easily consumable downstream for analysis and vis.
+## Scraper Modifications and Approach
 
-This template includes a sample workflow to demonstrate the core git scraping capabilities. Read on to learn how to customize it!
+### Original Implementation
+The original scraper was designed to collect only the main headline from the Daily Pennsylvanian homepage. It used a simple approach:
+- Made a single request to the homepage
+- Found the main headline using the CSS selector `a.frontpage-link`
+- Stored a single headline per day
 
-## Overview
+### Enhanced Implementation
+I've enhanced the scraper to collect a more comprehensive set of headlines by:
 
-The workflow defined in `.github/workflows/scrape.yaml` runs on a defined schedule to:
+1. **Expanding Data Collection**: The scraper now collects headlines from multiple sections:
+   - Main headline (using the original `frontpage-link` selector)
+   - News section headlines (using `div.section-news a.article-link`)
+   - Sports section headlines (using `div.section-sports a.article-link`)
+   - Opinion section headlines (using `div.section-opinion a.article-link`)
+   - Most read articles (using `div.most-read a.article-link`)
 
-1. Checkout the code
-2. Set up the Python environment
-3. Install dependencies via Pipenv
-4. Run the python script `script.py` to scrape data
-5. Commit any updated data files to the Git repository
+2. **Improved Data Structure**: 
+   - Changed the return type from a single string to a dictionary mapping section names to headlines
+   - Each headline is now tagged with its section (e.g., "main: Headline text")
+   - This allows for better analysis of content across different sections
 
-## Scheduling
+3. **Enhanced Error Handling**:
+   - Added type hints for better code maintainability
+   - Improved error handling for each section
+   - Added more detailed logging
 
-The workflow schedule is configured with [cron syntax](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule) to run:
+### Reasoning Behind the Approach
 
-- Every day at 8PM UTC
+1. **Comprehensive Coverage**: By collecting headlines from multiple sections, we can:
+   - Analyze content distribution across different sections
+   - Track how different types of news (sports, opinion, etc.) change over time
+   - Identify trends in what types of content make headlines
 
-This once-daily scraping is a good rule-of-thumb, as it is generally respectful of the target website, as it does not contribute to any measurable burden to the site's resources.
+2. **Respectful Scraping**: The approach maintains ethical scraping practices by:
+   - Making only one request to the homepage (minimizing server load)
+   - Respecting the robots.txt file's crawl delay of 10 seconds
+   - Only collecting publicly available information
 
-You can use [crontab.guru](https://crontab.guru/) to generate your own cron schedule.
+3. **Data Analysis Potential**: The enhanced data structure enables various analyses:
+   - Content distribution analysis (e.g., sports vs. news vs. opinion)
+   - Headline change frequency by section
+   - Most read article trends
+   - Temporal patterns in headline changes
 
-## Python Libraries
+4. **Maintainability**: The code is designed to be:
+   - Easy to extend for additional sections
+   - Well-documented with type hints
+   - Robust with proper error handling
 
-The main libraries used are:
+## Data Format
 
-- [`bs4`](https://www.crummy.com/software/BeautifulSoup/) - BeautifulSoup for parsing HTML
-- [`requests`](https://requests.readthedocs.io/en/latest/) - Making HTTP requests to scrape web pages
-- [`loguru`](https://github.com/Delgan/loguru) - Logging errors and run info
-- [`pytz`](https://github.com/stub42/pytz) - Handling datetimes and timezones  
-- [`waybackpy`](https://github.com/akamhy/waybackpy/) - Scraping web archives (optional)
-
-## Getting Started
-
-To adapt this for your own scraping project:
-
-- Use [this template to create your own repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template#creating-a-repository-from-a-template)
-- Modify `script.py` to scrape different sites and data points:
-  - Modifying the request URL
-  - Parsing the HTML with BeautifulSoup to extract relevant data
-  - Processing and outputting the scraped data as CSV, JSON etc
-- Update the workflow schedule as needed
-- Output and commit the scraped data to CSV, JSON or other formats
-- Add any additional libraries to `Pipfile` that you need
-- Update this `README.md` with project specifics
-
-Feel free to use this as a starter kit for your Python web scraping projects!
-
-## Setting Up a Local Development
-
-It is recommended to use a version manager, and virtual environments and environment managers for local development of Python projects.
-
-**asdf** is a version manager that allows you to easily install and manage multiple versions of languages and runtimes like Python. This is useful so you can upgrade/downgrade Python versions without interfering with your system Python.
-
-**Pipenv** creates a **virtual environment** for your project to isolate its dependencies from other projects. This allows you to install packages safely without impacting globally installed packages that other tools or apps may rely on. The virtual env also allows reproducibility of builds across different systems.
-
-Below we detail how to setup these environments to develop this template scrape project locally.
-
-### Setting Up a Python Environment
-
-Once you have installed `asdf`, you can install the Python plugin with:
-
-```bash
-asdf plugin add python
+The scraped data is stored in a JSON format that looks like:
+```json
+{
+  "2024-3-3": [
+    ["2024-03-03 01:41PM", "main: Main headline text"],
+    ["2024-03-03 01:41PM", "news: News section headline"],
+    ["2024-03-03 01:41PM", "sports: Sports section headline"],
+    ["2024-03-03 01:41PM", "opinion: Opinion section headline"],
+    ["2024-03-03 01:41PM", "most_read: Most read article headline"]
+  ]
+}
 ```
 
-Then you can install the latest version of Python with:
+## Ethical Considerations
 
-```bash
-asdf install python latest
-```
+This scraper is designed with ethical considerations in mind:
+1. Respects the website's robots.txt file
+2. Implements a crawl delay of 10 seconds (though we only scrape once per day)
+3. Only collects publicly available information
+4. Does not overload the server with requests
 
-After that, you can first install `pipenv` with:
+## Setup
 
-```bash
-pip install pipenv
-```
+1. Clone this repository
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Run the scraper:
+   ```bash
+   python script.py
+   ```
 
-### Installing Project Dependencies
+## GitHub Actions
 
-Then you can install the dependencies with:
+The scraper is configured to run automatically once per day using GitHub Actions. The workflow:
+1. Runs the scraper
+2. Commits any new headlines to the repository
+3. Creates a commit with the updated data file
 
-```bash
-pipenv install --dev
-```
+## Contributing
 
-This will create a virtual environment and install the dependencies from the `Pipfile`. The `--dev` flag will also install the development dependencies, which includes `ipykernel` for Jupyter Notebook support.
-
-### Running the Script
-
-You can then run the script to try it out with:
-
-```bash
-pipenv run python script.py
-```
-
-## Licensing
-
-This software is distributed under the terms of the MIT License. You have the freedom to use, modify, distribute, and sell it for any purpose. However, you must include the original copyright notice and the permission notice found in the LICENSE file in all copies or substantial portions of the software.
-
-You can [read more about the MIT license](https://choosealicense.com/licenses/mit/), and [compare different open-source licenses at `choosealicense.com`](https://choosealicense.com/licenses/).
-
-## Some Ethical Guidelines to Consider
-
-Web scraping is a powerful tool for gathering data, and its [legality has been upheld](https://en.wikipedia.org/wiki/HiQ_Labs_v._LinkedIn).
-
-But it is important to use it responsibly and ethically. Here are some guidelines to consider:
-
-1. Review the website's Terms of Service and [`robots.txt`](https://en.wikipedia.org/wiki/robots.txt) file to understand allowances and restrictions for automated scraping before starting.
-
-2. Avoid scraping copyrighted content verbatim without permission. Summarizing is safer. Use data judiciously under "fair use" principles.
-
-3. Do not enable illegal or fraudulent uses of scraped data, and be mindful of security and privacy.
-
-4. Check that your scraping activity does not overload or harm the website's servers. Scale activity gradually.
-
-5. Reflect on whether scraping could unintentionally reveal private user or organizational information from the site.
-
-6. Consider if scraped data could negatively impact the website's value or business model.
-
-7. Assess if decisions made using the data could contribute to bias, discrimination or unfair profiling.
-
-8. Validate quality of scraped data, and recognize limitations in ensuring relevance and accuracy inherent with web data.  
-
-9. Document your scraping process thoroughly for replicability, transparency and accountability.
-
-10. Continuously re-evaluate your scraping program against applicable laws and ethical principles.
+Feel free to submit issues and enhancement requests!

@@ -1,10 +1,11 @@
 """
-Scrapes a headline from The Daily Pennsylvanian website and saves it to a 
-JSON file that tracks headlines over time.
+Scrapes headlines from different sections of The Daily Pennsylvanian website 
+and saves them to a JSON file that tracks headlines over time.
 """
 
 import os
 import sys
+from typing import Dict, List, Tuple
 
 import daily_event_monitor
 
@@ -13,27 +14,62 @@ import requests
 import loguru
 
 
-def scrape_data_point():
+def scrape_data_point() -> Dict[str, str]:
     """
-    Scrapes the main headline from The Daily Pennsylvanian home page.
+    Scrapes headlines from different sections of The Daily Pennsylvanian home page.
 
     Returns:
-        str: The headline text if found, otherwise an empty string.
+        Dict[str, str]: A dictionary mapping section names to their headlines.
     """
     req = requests.get("https://www.thedp.com")
     loguru.logger.info(f"Request URL: {req.url}")
     loguru.logger.info(f"Request status code: {req.status_code}")
 
+    headlines = {}
+    
     if req.ok:
         soup = bs4.BeautifulSoup(req.text, "html.parser")
-        target_element = soup.find("a", class_="frontpage-link")
-        data_point = "" if target_element is None else target_element.text
-        loguru.logger.info(f"Data point: {data_point}")
-        return data_point
+        
+        # Main headline
+        main_headline = soup.find("a", class_="frontpage-link")
+        if main_headline:
+            headlines["main"] = main_headline.text.strip()
+        
+        # News section headlines
+        news_section = soup.find("div", class_="section-news")
+        if news_section:
+            news_headline = news_section.find("a", class_="article-link")
+            if news_headline:
+                headlines["news"] = news_headline.text.strip()
+        
+        # Sports section headlines
+        sports_section = soup.find("div", class_="section-sports")
+        if sports_section:
+            sports_headline = sports_section.find("a", class_="article-link")
+            if sports_headline:
+                headlines["sports"] = sports_headline.text.strip()
+        
+        # Opinion section headlines
+        opinion_section = soup.find("div", class_="section-opinion")
+        if opinion_section:
+            opinion_headline = opinion_section.find("a", class_="article-link")
+            if opinion_headline:
+                headlines["opinion"] = opinion_headline.text.strip()
+        
+        # Most read article
+        most_read = soup.find("div", class_="most-read")
+        if most_read:
+            most_read_headline = most_read.find("a", class_="article-link")
+            if most_read_headline:
+                headlines["most_read"] = most_read_headline.text.strip()
+        
+        loguru.logger.info(f"Scraped headlines: {headlines}")
+        return headlines
+    
+    return headlines
 
 
 if __name__ == "__main__":
-
     # Setup logger to track runtime
     loguru.logger.add("scrape.log", rotation="1 day")
 
@@ -54,14 +90,15 @@ if __name__ == "__main__":
     # Run scrape
     loguru.logger.info("Starting scrape")
     try:
-        data_point = scrape_data_point()
+        headlines = scrape_data_point()
     except Exception as e:
         loguru.logger.error(f"Failed to scrape data point: {e}")
-        data_point = None
+        headlines = None
 
     # Save data
-    if data_point is not None:
-        dem.add_today(data_point)
+    if headlines is not None:
+        for section, headline in headlines.items():
+            dem.add_today(f"{section}: {headline}")
         dem.save()
         loguru.logger.info("Saved daily event monitor")
 
